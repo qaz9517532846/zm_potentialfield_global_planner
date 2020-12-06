@@ -1,0 +1,5 @@
+<library path="lib/libzm_potentialfield_global_planner">
+ <class name="zm_potentialfield_global_planner/zmPotentialFieldGlobalPlanner" type="zm_potentialfield_global_planner::zmPotentialFieldGlobalPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+   <description>This is potential field global planner plugin by zm robotics project.</description>
+ </class>
+</library>
