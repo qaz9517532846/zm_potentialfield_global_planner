@@ -12,19 +12,19 @@ Step1. Download zm_potentialfield_global_planner github link.
 
 ``` bash
 $ cd <catkin_ws>/src
-------
+```
 
 ``` bash
 $ git clone https://github.com/qaz9517532846/zm_potentialfield_global_planner.git
-------
+```
 
 ``` bash
 $ cd ..
-------
+```
 
 ``` bash
 $ catkin_make
-------
+```
 
 # Reference
 
