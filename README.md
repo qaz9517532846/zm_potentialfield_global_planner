@@ -1,6 +1,8 @@
 # zm_potentialfield_global_planner
 
-zm_potentialfield_global_planner is a global planner algorithm under ROS.
+zm_potentialfield_global_planner is a global planner algorithm under ROS using Potential Field for AGV using mecanum wheel motion.
+
+start pose to goal pose x-y 2-D motion(x-y), finally rotation z angle to goal pose(x-y-theta).
 
 Software : Robot Operating System.
 
@@ -25,6 +27,26 @@ $ cd ..
 ``` bash
 $ catkin_make
 ```
+
+Step2. zm_potentialfield_global_planner add to move_base.launch file.
+
+``` bash
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_global_planner" value="zm_potentialfield_global_planner/zmPotentialFieldGlobalPlanner" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(find zm_robot_navigation)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find zm_robot_navigation)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find zm_robot_navigation)/param/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find zm_robot_navigation)/param/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find zm_robot_navigation)/param/move_base_params.yaml" command="load" />
+    <rosparam file="$(find zm_robot_navigation)/param/dwa_local_planner_params.yaml" command="load" />
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+  </node>
+```
+
+-----
 
 # Reference
 
