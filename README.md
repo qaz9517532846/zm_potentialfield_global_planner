@@ -48,6 +48,12 @@ Step2. zm_potentialfield_global_planner add to move_base.launch file.
 
 -----
 
+Potential Field global planner and A* global planner path result.
+
+![image](https://github.com/qaz9517532846/zm_potentialfield_global_planner/blob/main/image/result.png)
+
+-----
+
 # Reference
 
 [1]. Potential_Field_GlobalPlanner_ROS. https://github.com/gonzalesMK/Potential_Field_GlobalPlanner_ROS
