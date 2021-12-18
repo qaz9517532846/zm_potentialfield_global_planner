@@ -4,24 +4,16 @@
 //register this planner as a BaseGlobalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(zm_potentialfield_global_planner::zmPotentialFieldGlobalPlanner, nav_core::BaseGlobalPlanner)
 
-//using namespace std;
-
-int value_;
-int mapSize_;
-bool* OGM_;
-const float RAIO = 1 ; // Raio do Potencial de um obstáculo
-const float JUMP = 1 ;
-const float C = 3;      // Constante da Soma do Potencial de um obstáculo
-const float GOALPOTENTIALMULTIPLIER = 100;
-const float WALK =  2 ; // quantas cells pular
-const float GOALERROR = 0.3 ;// distancia da goal para ser considerado atiginda
-const float DELTAERROR = 20 ;
-
 namespace zm_potentialfield_global_planner
 {
     zmPotentialFieldGlobalPlanner::zmPotentialFieldGlobalPlanner()
     {
 
+    }
+
+    zmPotentialFieldGlobalPlanner::~zmPotentialFieldGlobalPlanner()
+    {
+        delete dsrv_;
     }
     
     zmPotentialFieldGlobalPlanner::zmPotentialFieldGlobalPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
@@ -31,46 +23,57 @@ namespace zm_potentialfield_global_planner
     
     void zmPotentialFieldGlobalPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
     {
-        if (!initialized_)
-        {
-            costmap_ros_ = costmap_ros;
-            costmap_ = costmap_ros_->getCostmap();
-            originX_ = costmap_->getOriginX();
-            originY_ = costmap_->getOriginY();
-            width_ = costmap_->getSizeInCellsX();
-            height_ = costmap_->getSizeInCellsY();
-            resolution_ = costmap_->getResolution();
-            mapSize_ = width_ * height_;
-            cout << "width = " << width_ << ", height = " << height_ << ", mapsize = " << mapSize_ << endl;
-            
-            posPotMap_ = new float [mapSize_];
-            obsPotMap_ = new float [mapSize_];
-            OGM_ = new bool [mapSize_];
+        ros::NodeHandle private_nh("~/" + name);
 
-            for (unsigned int iy = 0; iy < height_; iy++)
+        costmap_ros_ = costmap_ros;
+        costmap_ = costmap_ros_->getCostmap();
+        originX_ = costmap_->getOriginX();
+        originY_ = costmap_->getOriginY();
+        width_ = costmap_->getSizeInCellsX();
+        height_ = costmap_->getSizeInCellsY();
+        resolution_ = costmap_->getResolution();
+        mapSize_ = width_ * height_;
+        cout << "width = " << width_ << ", height = " << height_ << ", mapsize = " << mapSize_ << endl;
+            
+        posPotMap_ = new float [mapSize_];
+        obsPotMap_ = new float [mapSize_];
+        OGM_ = new bool [mapSize_];
+
+        for (unsigned int iy = 0; iy < height_; iy++)
+        {
+            for (unsigned int ix = 0; ix < width_; ix++)
             {
-                for (unsigned int ix = 0; ix < width_; ix++)
+                unsigned int cost = static_cast<int>(costmap_->getCost(ix, iy));
+                if(cost < DELTAERROR)
                 {
-                    unsigned int cost = static_cast<int>(costmap_->getCost(ix, iy));
-                    if (cost < DELTAERROR )
-                    {
-                        OGM_[iy * width_ + ix] = true;
-                    }
-                    else
-                    {
-                        OGM_[iy * width_ + ix] = false;
-                    }
+                    OGM_[iy * width_ + ix] = true;
+                }
+                else
+                {
+                    OGM_[iy * width_ + ix] = false;
                 }
             }
+        }
             
-            calculateObstaclePotential();
-            ROS_INFO(" Potential planner initialized successfully - Obstacle Potential Already Calculated");
-            initialized_ = true;
-        }
-        else
-        {
-            ROS_WARN("This planner has already been initialized... doing nothing");
-        }
+        calculateObstaclePotential();
+
+        dsrv_ = new dynamic_reconfigure::Server<ZMPotentialfieldGlobalPlannerConfig>(private_nh);
+        dynamic_reconfigure::Server<ZMPotentialfieldGlobalPlannerConfig>::CallbackType cb = boost::bind(&zmPotentialFieldGlobalPlanner::reconfigureCB, this, _1, _2);
+        dsrv_->setCallback(cb);
+
+        ROS_INFO(" Potential planner initialized successfully - Obstacle Potential Already Calculated");
+        initialized_ = true;
+    }
+
+    void zmPotentialFieldGlobalPlanner::reconfigureCB(ZMPotentialfieldGlobalPlannerConfig &config, uint32_t level)
+    {
+        RAIO = config.ratio;
+        JUMP = config.jump;
+        C = config.constant;
+        GOALPOTENTIALMULTIPLIER = config.global_potential_multiplier;
+        WALK = config.walk;
+        GOALERROR = config.goal_error;
+        DELTAERROR = config.delta_error;
     }
     
     void zmPotentialFieldGlobalPlanner::calculateObstaclePotential()
@@ -94,7 +97,7 @@ namespace zm_potentialfield_global_planner
         float x, y;
         int index;
         float cost;
-        convertToCoordinate( cellID, x, y);
+        convertToCoordinate(cellID, x, y);
         getCoordinate(x,y);
         for( register float i = - RAIO; i < RAIO; i+= JUMP * resolution_)
         {
@@ -162,6 +165,7 @@ namespace zm_potentialfield_global_planner
     {
         bool valid;
         valid = ! (x >= ( width_ * resolution_) || y >= (height_* resolution_) || (x < 0) || (y< 0));
+        return valid;
     }
     
     float zmPotentialFieldGlobalPlanner::getDistance(float x1, float y1, float x2, float y2)

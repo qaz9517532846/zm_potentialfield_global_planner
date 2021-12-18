@@ -7,6 +7,9 @@
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/costmap_model.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <zm_potentialfield_global_planner/ZMPotentialfieldGlobalPlannerConfig.h>
+
 using namespace std;
 using std::string;
 
@@ -18,7 +21,8 @@ namespace zm_potentialfield_global_planner
     class zmPotentialFieldGlobalPlanner : public nav_core::BaseGlobalPlanner
     {
         public:
-          zmPotentialFieldGlobalPlanner(); 
+          zmPotentialFieldGlobalPlanner();
+          ~zmPotentialFieldGlobalPlanner(); 
           zmPotentialFieldGlobalPlanner( std::string name, costmap_2d::Costmap2DROS* costmap_ros);
           void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
           bool makePlan(const geometry_msgs::PoseStamped& start, const geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& plan);
@@ -26,6 +30,7 @@ namespace zm_potentialfield_global_planner
         private:
           std::vector<int> potentialPlanner(int startCell, int goalCell);
           std::vector<int> findPath(int startCell, int goalCell);
+          void reconfigureCB(ZMPotentialfieldGlobalPlannerConfig &config, uint32_t level);
           void calculateGoalPotential(int goalCell) ;
           void calculateObstaclePotential();
           void getCoordinate (float& x, float& y);
@@ -41,6 +46,8 @@ namespace zm_potentialfield_global_planner
           int getCellRowID(int index);
           int getCellColID(int index);
           bool isGoalAcomplished( int currentCell , int goalCell);
+
+          dynamic_reconfigure::Server<ZMPotentialfieldGlobalPlannerConfig> *dsrv_;
           
           float originX_;
           float originY_;
@@ -52,6 +59,17 @@ namespace zm_potentialfield_global_planner
           int height_;
           float* posPotMap_; //position potential map;
           float* obsPotMap_; // obstacle potential map;
+
+          int value_;
+          int mapSize_;
+          bool* OGM_;
+          double RAIO = 1 ; // Raio do Potencial de um obstáculo
+          double JUMP = 1 ;
+          double C = 3;      // Constante da Soma do Potencial de um obstáculo
+          double GOALPOTENTIALMULTIPLIER = 100;
+          double WALK =  2 ; // quantas cells pular
+          double GOALERROR = 0.3 ;// distancia da goal para ser considerado atiginda
+          double DELTAERROR = 20 ;
     };
 };
 #endif 
